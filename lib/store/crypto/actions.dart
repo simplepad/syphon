@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:canonical_json/canonical_json.dart';
+import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -1100,28 +1101,87 @@ ThunkAction<AppState> fetchDeviceKeysOwned(User user) {
   };
 }
 
-ThunkAction<AppState> exportSessionKeys() {
+Future<String> encryptSessionExport({
+  required String serializedJson,
+  required String password,
+}) async {
+  const HEADERLINE = '-----BEGIN MEGOLM SESSION DATA-----';
+  const TRAILERLINE = '-----END MEGOLM SESSION DATA-----';
+
+  final encryptor = encrypt.AES(
+    encrypt.Key.fromBase64(password),
+    mode: encrypt.AESMode.ctr,
+    padding: null,
+  );
+
+  // encryptor.encrypt(bytes);
+
+  // TODO: remove
+  return serializedJson;
+}
+
+///
+/// Export Session Keys
+///
+///
+/// https://matrix.org/docs/spec/client_server/latest#sharing-keys-between-devices
+ThunkAction<AppState> exportSessionKeys({required String password}) {
   return (Store<AppState> store) async {
     try {
+      final user = store.state.authStore.user;
+      final deviceId = user.deviceId;
+      final messageSessions = store.state.cryptoStore.inboundMessageSessions;
+
+      final sessionData = [];
+
+      // prepend session keys to an array per spec
+      for (final roomSession in messageSessions.entries) {
+        final roomId = roomSession.key;
+        final sessions = roomSession.value;
+        final roomMessageIndexs = store.state.cryptoStore.messageSessionIndex[roomId];
+
+        for (final session in sessions.entries) {
+          final identityKey = session.key;
+          final sessionSerialized = session.value;
+          final identityMessageIndex = roomMessageIndexs?[identityKey] ?? -1;
+
+          // attempt to decrypt with any existing sessions
+          final inboundSession = olm.InboundGroupSession()..unpickle(deviceId!, sessionSerialized);
+
+          // session
+          final sessionId = inboundSession.session_id();
+          final sessionKey = inboundSession.export_session(identityMessageIndex);
+
+          sessionData.add({
+            'algorithm': Algorithms.megolmv1,
+            'forwarding_curve25519_key_chain': [], // TODO:
+            'room_id': roomId,
+            'sender_key': identityKey,
+            'sender_claimed_keys': {
+              // TODO:
+              'ed25519': '<device ed25519 identity key>',
+            },
+            'session_id': sessionId,
+            'session_key': sessionKey,
+          });
+        }
+      }
+
+      // encrypt exported session keys
+      final String encryptedExport = await encryptSessionExport(
+        serializedJson: json.encode(sessionData),
+        password: password,
+      );
+
+      // create file
       final directory = await getApplicationDocumentsDirectory();
 
       final currentTime = DateTime.now();
-
       final formattedTime = DateFormat('MMM_dd_yyyy_hh_mm_aa').format(currentTime).toLowerCase();
-
       final fileName = '${directory.path}/syphon_keys_export_$formattedTime.json';
+      final file = File(fileName);
 
-      var file = File(fileName);
-
-      final user = store.state.authStore.user;
-      final deviceKey = store.state.cryptoStore.deviceKeysOwned[user.deviceId!]!;
-
-      final exportData = {
-        'account_key': store.state.cryptoStore.olmAccountKey,
-        'device_keys': deviceKey.toMatrix(),
-      };
-
-      file = await file.writeAsString(json.encode(exportData));
+      await file.writeAsString(encryptedExport);
     } catch (error) {
       store.dispatch(addAlert(
         error: error,
@@ -1137,18 +1197,16 @@ ThunkAction<AppState> importSessionKeys() {
       final authUser = store.state.authStore.user;
       final FilePickerResult file = await (FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['.json'],
+        allowedExtensions: ['.txt'],
       ) as Future<FilePickerResult>);
 
-      final File keyFile = File(file.paths[0]!);
+      final keyFile = File(file.paths[0]!);
 
       final importData = await json.decode(await keyFile.readAsString());
 
-      store.dispatch(
-        SetOlmAccountBackup(
-          olmAccountKey: importData['account_key'],
-        ),
-      );
+      store.dispatch(SetOlmAccountBackup(
+        olmAccountKey: importData['account_key'],
+      ));
 
       store.dispatch(
         SetDeviceKeysOwned(

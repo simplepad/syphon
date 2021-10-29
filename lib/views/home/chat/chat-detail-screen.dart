@@ -224,7 +224,6 @@ class ChatDetailsState extends State<ChatDetailsScreen> {
                               uri: props.room.avatarUri,
                               alt: props.room.name,
                               background: props.chatColorPrimary,
-                              rebuild: false,
                             ),
                           ),
                         ],
@@ -334,7 +333,8 @@ class ChatDetailsState extends State<ChatDetailsScreen> {
                                     style: Theme.of(context).textTheme.caption,
                                   ),
                                   Visibility(
-                                    visible: props.room.topic != null && props.room.topic!.isNotEmpty,
+                                    visible:
+                                        props.room.topic != null && props.room.topic!.isNotEmpty,
                                     child: Container(
                                       padding: EdgeInsets.only(top: 12),
                                       child: Text(
@@ -435,7 +435,10 @@ class ChatDetailsState extends State<ChatDetailsScreen> {
                                 padding: EdgeInsets.symmetric(horizontal: 8),
                                 child: Text(
                                   'Default',
-                                  style: Theme.of(context).textTheme.subtitle1!.copyWith(color: Colors.grey),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .subtitle1!
+                                      .copyWith(color: Colors.grey),
                                 ),
                               ),
                             ),
@@ -449,7 +452,10 @@ class ChatDetailsState extends State<ChatDetailsScreen> {
                                 padding: EdgeInsets.symmetric(horizontal: 8),
                                 child: Text(
                                   'Default (Argon)',
-                                  style: Theme.of(context).textTheme.subtitle1!.copyWith(color: Colors.grey),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .subtitle1!
+                                      .copyWith(color: Colors.grey),
                                 ),
                               ),
                             ),
@@ -479,37 +485,35 @@ class ChatDetailsState extends State<ChatDetailsScreen> {
                         ),
                       ),
                       CardSection(
-                        child: Container(
-                          child: Column(
-                            children: [
-                              Visibility(
-                                visible: props.room.direct,
-                                child: ListTile(
-                                  onTap: () => onBlockUser(
-                                    context: context,
-                                    props: props,
-                                  ),
-                                  contentPadding: contentPadding,
-                                  title: Text(
-                                    'Block User',
-                                    style: Theme.of(context).textTheme.subtitle1!.copyWith(
-                                          color: Colors.redAccent,
-                                        ),
-                                  ),
+                        child: Column(
+                          children: [
+                            Visibility(
+                              visible: props.room.direct,
+                              child: ListTile(
+                                onTap: () => onBlockUser(
+                                  context: context,
+                                  props: props,
                                 ),
-                              ),
-                              ListTile(
-                                onTap: () => onLeaveChat(props),
                                 contentPadding: contentPadding,
                                 title: Text(
-                                  'Leave Chat',
+                                  'Block User',
                                   style: Theme.of(context).textTheme.subtitle1!.copyWith(
                                         color: Colors.redAccent,
                                       ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                            ListTile(
+                              onTap: () => onLeaveChat(props),
+                              contentPadding: contentPadding,
+                              title: Text(
+                                'Leave Chat',
+                                style: Theme.of(context).textTheme.subtitle1!.copyWith(
+                                      color: Colors.redAccent,
+                                    ),
+                              ),
+                            ),
+                          ],
                         ),
                       )
                     ],
@@ -569,7 +573,8 @@ class _Props extends Equatable {
   static _Props mapStateToProps(Store<AppState> store, String? roomId) => _Props(
       loading: store.state.roomStore.loading,
       notificationSettings: store.state.settingsStore.notificationSettings,
-      notificationOptions: store.state.settingsStore.notificationSettings.notificationOptions[roomId],
+      notificationOptions:
+          store.state.settingsStore.notificationSettings.notificationOptions[roomId],
       room: selectRoom(id: roomId, state: store.state),
       users: roomUsers(store.state, roomId),
       currentUser: store.state.authStore.user,
