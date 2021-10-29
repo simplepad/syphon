@@ -616,7 +616,8 @@ ThunkAction<AppState> updateKeySessions({
         },
       ));
     } catch (error) {
-      store.dispatch(addAlert(origin: 'updateKeySessions', message: error.toString(), error: error));
+      store
+          .dispatch(addAlert(origin: 'updateKeySessions', message: error.toString(), error: error));
     }
   };
 }
@@ -788,7 +789,8 @@ ThunkAction<AppState> loadKeySessionOutbound({
 
           final keySessionType = keySession.encrypt_message_type();
 
-          printInfo('[loadKeySessionOutbound] found $keySessionId for $identityKey of type $keySessionType');
+          printInfo(
+              '[loadKeySessionOutbound] found $keySessionId for $identityKey of type $keySessionType');
           return keySession;
         } catch (error) {
           printInfo('[loadKeySessionOutbound] unsuccessful $identityKey $error');
@@ -1098,7 +1100,7 @@ ThunkAction<AppState> fetchDeviceKeysOwned(User user) {
   };
 }
 
-ThunkAction<AppState> exportDeviceKeysOwned() {
+ThunkAction<AppState> exportSessionKeys() {
   return (Store<AppState> store) async {
     try {
       final directory = await getApplicationDocumentsDirectory();
@@ -1107,7 +1109,7 @@ ThunkAction<AppState> exportDeviceKeysOwned() {
 
       final formattedTime = DateFormat('MMM_dd_yyyy_hh_mm_aa').format(currentTime).toLowerCase();
 
-      final fileName = '${directory.path}/app_key_export_$formattedTime.json';
+      final fileName = '${directory.path}/syphon_keys_export_$formattedTime.json';
 
       var file = File(fileName);
 
@@ -1129,7 +1131,7 @@ ThunkAction<AppState> exportDeviceKeysOwned() {
   };
 }
 
-ThunkAction<AppState> importDeviceKeysOwned() {
+ThunkAction<AppState> importSessionKeys() {
   return (Store<AppState> store) async {
     try {
       final authUser = store.state.authStore.user;

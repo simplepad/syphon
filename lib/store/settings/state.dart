@@ -27,6 +27,8 @@ class SettingsStore extends Equatable {
   final bool dismissKeyboardEnabled;
   final bool autoDownloadEnabled;
 
+  final bool hasExportedKeys;
+
   final int syncInterval;
   final int syncPollTimeout;
 
@@ -50,6 +52,7 @@ class SettingsStore extends Equatable {
     this.globalSortOrder = SortOrder.Latest,
     this.enterSendEnabled = false,
     this.smsEnabled = false,
+    this.hasExportedKeys = false,
     this.typingIndicatorsEnabled = false,
     this.membershipEventsEnabled = true,
     this.roomTypeBadgesEnabled = true,
